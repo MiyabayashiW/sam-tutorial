@@ -20,5 +20,4 @@ Resources:
         RestrictPublicBuckets: true
       NotificationConfiguration:
         EventBridgeConfiguration:
-          EventBridgeEnabled: true
-                  
+          EventBridgeEnabled: true        

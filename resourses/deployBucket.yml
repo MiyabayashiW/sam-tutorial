@@ -12,4 +12,3 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub "tutorial100-deploy-bucket-${EnvName}"
-      
