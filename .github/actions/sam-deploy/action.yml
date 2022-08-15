@@ -12,7 +12,7 @@ runs:
     - run: |
         sam deploy --no-confirm-changeset \
             --no-fail-on-empty-changeset \
-            --stack-name pkg100-deploy-resources-${GITHUB_REF#refs/heads/} \
-            --s3-bucket tutorial100-deploy-bucket-${GITHUB_REF#refs/heads/} \
+            --stack-name first2-deploy-resources-${GITHUB_REF#refs/heads/} \
+            --s3-bucket first2-deploy-bucket-${GITHUB_REF#refs/heads/} \
             --parameter-overrides EnvName=${GITHUB_REF#refs/heads/}
       shell: bash
