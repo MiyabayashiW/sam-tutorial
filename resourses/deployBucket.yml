@@ -12,3 +12,4 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub "first2-deploy-bucket-${EnvName}"
+
