@@ -16,4 +16,3 @@ runs:
             --s3-bucket tutorial100-deploy-bucket-${GITHUB_REF#refs/heads/} \
             --parameter-overrides EnvName=${GITHUB_REF#refs/heads/}
       shell: bash
-      
