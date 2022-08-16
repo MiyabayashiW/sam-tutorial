@@ -7,6 +7,10 @@ Parameters:
     Description: "Your environment name here"
     Type: String
     Default: defalt
+  CloudWatchAlarmEmail:
+    Description: "The e-mail to notify errors"
+    Type: String
+    Default: ""
 
 Resources:
   StreamDataBucket:
@@ -20,4 +24,144 @@ Resources:
         RestrictPublicBuckets: true
       NotificationConfiguration:
         EventBridgeConfiguration:
-          EventBridgeEnabled: true        
+          EventBridgeEnabled: true
+
+  PKGKinesisFirehose:
+    Type: AWS::KinesisFirehose::DeliveryStream
+    DependsOn: StreamDataBucket
+    Properties:
+      DeliveryStreamName: !Sub PKG_stream_${EnvName}
+      DeliveryStreamType: DirectPut
+      ExtendedS3DestinationConfiguration:
+        BucketARN: !Sub "arn:aws:s3:::second-stream-data-bucket-${EnvName}"
+        BufferingHints:
+          SizeInMBs: 64
+          IntervalInSeconds: 60
+        ErrorOutputPrefix: error/
+        Prefix: uuid/!{partitionKeyFromQuery:uuid}/
+        RoleARN: !Sub "${FirehoseRole.Arn}"
+        DynamicPartitioningConfiguration:
+          Enabled: true
+        CloudWatchLoggingOptions:
+          Enabled: true
+          LogGroupName: !Ref FirehoseLogGroup
+          LogStreamName: !Ref FirehoseLogStream
+        ProcessingConfiguration:
+          Enabled: "true"
+          Processors:
+            - Type: MetadataExtraction
+              Parameters:
+                - ParameterName: MetadataExtractionQuery
+                  ParameterValue: "{uuid:.uuid}"
+                - ParameterName: JsonParsingEngine
+                  ParameterValue: JQ-1.6
+
+  FirehoseRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub firehose_role_${EnvName}
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - firehose.amazonaws.com
+            Action:
+              - sts:AssumeRole
+
+  DeliveryPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub firehose_delivery_policy_${EnvName}
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:PutObject
+            Resource:
+              - !Sub "arn:aws:s3:::${StreamDataBucket}/*"
+      Roles:
+        - !Ref "FirehoseRole"
+
+  LoggingPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub firehose_logging_policy_${EnvName}
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:putLogEvents
+            Resource:
+              - "*"
+      Roles:
+        - !Ref "FirehoseRole"
+
+  FirehoseUser:
+    Type: AWS::IAM::User
+    Properties:
+      Policies:
+        - PolicyName: !Sub firehose_delivery_policy_${EnvName}
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action: "*"
+                Resource: "*"
+      UserName: !Sub FirehoseUser_${EnvName}
+
+  FirehoseUserAccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: !Ref FirehoseUser
+
+  FirehoseUserAccessKeySecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub FirehoseUser-credentials_${EnvName}
+      SecretString: !Sub '{"accessKeyId":"${FirehoseUserAccessKey}","secretAccessKey":"${FirehoseUserAccessKey.SecretAccessKey}"}'
+
+  FirehoseLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/kinesisfirehose/PKG_streamlog_${EnvName}
+      RetentionInDays: 365
+
+  FirehoseLogStream:
+    Type: AWS::Logs::LogStream
+    Properties:
+      LogGroupName: !Ref FirehoseLogGroup
+      LogStreamName: !Sub S3_Delivery_Error_${EnvName}
+
+  CloudWatchKinesisToS3:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+      Namespace: AWS/Logs
+      AlarmName: !Sub PKG-${FirehoseLogStream}-errors-alarm
+      MetricName: IncomingLogEvents
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      Period: 3600
+      Statistic: Sum
+      Threshold: 1
+      Dimensions:
+        - Name: LogGroupName
+          Value: !Ref FirehoseLogGroup
+      AlarmActions:
+        - !Ref LogStreamFirehoseAlarmTopic
+
+  LogStreamFirehoseAlarmTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: !Sub PKG-${FirehoseLogStream}-errors-alarm
+      TopicName: !Sub PKG-${FirehoseLogStream}-errors-alarm
+
+  LogStreamFirehoseEmailSubscriber:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !Ref CloudWatchAlarmEmail
+      Protocol: email
+      TopicArn: !Ref LogStreamFirehoseAlarmTopic
