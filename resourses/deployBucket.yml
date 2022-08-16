@@ -11,5 +11,5 @@ Resources:
   MyBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "second-deploy-bucket-${EnvName}"
+      BucketName: !Sub "third-deploy-bucket-${EnvName}"
 

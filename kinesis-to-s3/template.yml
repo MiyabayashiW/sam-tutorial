@@ -16,7 +16,7 @@ Resources:
   StreamDataBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "first2-stream-data-bucket-${EnvName}"
+      BucketName: !Sub "third-stream-data-bucket-${EnvName}"
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -33,7 +33,7 @@ Resources:
       DeliveryStreamName: !Sub PKG_stream_${EnvName}
       DeliveryStreamType: DirectPut
       ExtendedS3DestinationConfiguration:
-        BucketARN: !Sub "arn:aws:s3:::second-stream-data-bucket-${EnvName}"
+        BucketARN: !Sub "arn:aws:s3:::third-stream-data-bucket-${EnvName}"
         BufferingHints:
           SizeInMBs: 64
           IntervalInSeconds: 60
