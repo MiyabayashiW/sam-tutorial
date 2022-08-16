@@ -42,10 +42,6 @@ Resources:
         RoleARN: !Sub "${FirehoseRole.Arn}"
         DynamicPartitioningConfiguration:
           Enabled: true
-        CloudWatchLoggingOptions:
-          Enabled: true
-          LogGroupName: !Ref FirehoseLogGroup
-          LogStreamName: !Ref FirehoseLogStream
         ProcessingConfiguration:
           Enabled: "true"
           Processors:
@@ -84,55 +80,3 @@ Resources:
               - !Sub "arn:aws:s3:::${StreamDataBucket}/*"
       Roles:
         - !Ref "FirehoseRole"
-
-  LoggingPolicy:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: !Sub firehose_logging_policy_${EnvName}
-      PolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Action:
-              - logs:putLogEvents
-            Resource:
-              - "*"
-      Roles:
-        - !Ref "FirehoseRole"
-
-  FirehoseLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/kinesisfirehose/PKG_streamlog_${EnvName}
-      RetentionInDays: 365
-
-  FirehoseLogStream:
-    Type: AWS::Logs::LogStream
-    Properties:
-      LogGroupName: !Ref FirehoseLogGroup
-      LogStreamName: !Sub S3_Delivery_Error_${EnvName}
-
-  CloudWatchKinesisToS3:
-    Type: "AWS::CloudWatch::Alarm"
-    Properties:
-      Namespace: AWS/Logs
-      AlarmName: !Sub PKG-${FirehoseLogStream}-errors-alarm
-      MetricName: IncomingLogEvents
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      EvaluationPeriods: 1
-      Period: 3600
-      Statistic: Sum
-      Threshold: 1
-      Dimensions:
-        - Name: LogGroupName
-          Value: !Ref FirehoseLogGroup
-      AlarmActions:
-        - !Ref LogStreamFirehoseAlarmTopic
-
-  LogStreamFirehoseAlarmTopic:
-    Type: AWS::SNS::Topic
-    Properties:
-      DisplayName: !Sub PKG-${FirehoseLogStream}-errors-alarm
-      TopicName: !Sub PKG-${FirehoseLogStream}-errors-alarm
-
- 
