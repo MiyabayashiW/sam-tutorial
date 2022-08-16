@@ -16,7 +16,7 @@ Resources:
   StreamDataBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "third-stream-data-bucket-${EnvName}"
+      BucketName: !Sub "fourth-stream-data-bucket-${EnvName}"
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -33,7 +33,7 @@ Resources:
       DeliveryStreamName: !Sub PKG_stream_${EnvName}
       DeliveryStreamType: DirectPut
       ExtendedS3DestinationConfiguration:
-        BucketARN: !Sub "arn:aws:s3:::third-stream-data-bucket-${EnvName}"
+        BucketARN: !Sub "arn:aws:s3:::fourth-stream-data-bucket-${EnvName}"
         BufferingHints:
           SizeInMBs: 64
           IntervalInSeconds: 60
@@ -159,9 +159,4 @@ Resources:
       DisplayName: !Sub PKG-${FirehoseLogStream}-errors-alarm
       TopicName: !Sub PKG-${FirehoseLogStream}-errors-alarm
 
-  LogStreamFirehoseEmailSubscriber:
-    Type: AWS::SNS::Subscription
-    Properties:
-      Endpoint: !Ref CloudWatchAlarmEmail
-      Protocol: email
-      TopicArn: !Ref LogStreamFirehoseAlarmTopic
+ 
