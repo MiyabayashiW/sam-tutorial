@@ -16,7 +16,7 @@ Resources:
   StreamDataBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "fourth-stream-data-bucket-${EnvName}"
+      BucketName: !Sub "five-stream-data-bucket-${EnvName}"
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -33,7 +33,7 @@ Resources:
       DeliveryStreamName: !Sub PKG_stream_${EnvName}
       DeliveryStreamType: DirectPut
       ExtendedS3DestinationConfiguration:
-        BucketARN: !Sub "arn:aws:s3:::fourth-stream-data-bucket-${EnvName}"
+        BucketARN: !Sub "arn:aws:s3:::five-stream-data-bucket-${EnvName}"
         BufferingHints:
           SizeInMBs: 64
           IntervalInSeconds: 60
@@ -59,7 +59,7 @@ Resources:
   FirehoseRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub firehose_role_${EnvName}
+      RoleName: !Sub five_firehose_role_${EnvName}
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -99,30 +99,6 @@ Resources:
               - "*"
       Roles:
         - !Ref "FirehoseRole"
-
-  FirehoseUser:
-    Type: AWS::IAM::User
-    Properties:
-      Policies:
-        - PolicyName: !Sub firehose_delivery_policy_${EnvName}
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: "Allow"
-                Action: "*"
-                Resource: "*"
-      UserName: !Sub FirehoseUser_${EnvName}
-
-  FirehoseUserAccessKey:
-    Type: AWS::IAM::AccessKey
-    Properties:
-      UserName: !Ref FirehoseUser
-
-  FirehoseUserAccessKeySecret:
-    Type: AWS::SecretsManager::Secret
-    Properties:
-      Name: !Sub FirehoseUser-credentials_${EnvName}
-      SecretString: !Sub '{"accessKeyId":"${FirehoseUserAccessKey}","secretAccessKey":"${FirehoseUserAccessKey.SecretAccessKey}"}'
 
   FirehoseLogGroup:
     Type: AWS::Logs::LogGroup
