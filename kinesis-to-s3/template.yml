@@ -80,3 +80,4 @@ Resources:
               - !Sub "arn:aws:s3:::${StreamDataBucket}/*"
       Roles:
         - !Ref "FirehoseRole"
+        
